@@ -426,3 +426,77 @@ function starredUser(){
     twitterUserContainer.appendChild(img);
     twitterUserContainer.appendChild(span);
 }
+
+var alexandria_address = document.getElementsByClassName('pwyw-btc-address')[0];
+var alexandria_play_price = document.getElementsByClassName('pwyw-btc-play-price')[0];
+
+var countdown_interval;
+var countdown_box;
+
+if (alexandria_address && alexandria_play_price) var alexandria_interval = setInterval(function() {
+    if (alexandria_address.innerHTML && alexandria_play_price.innerHTML) {
+        console.log(alexandria_address.innerHTML, alexandria_play_price.innerHTML);
+        clearInterval(alexandria_interval);
+        countdown_interval = setInterval(displayCountdown, 1000);
+        chrome.runtime.sendMessage({ action: 'restoreAddress' });
+    }
+}, 100);
+
+function displayCountdown() {
+    if (countdown_box) {
+        var seconds = document.getElementById('protip-countdown-seconds').innerHTML;
+
+        if (seconds == 0) {
+            clearInterval(countdown_interval);
+            countdown_box.parentNode.removeChild(countdown_box);
+            chrome.runtime.sendMessage({ action: 'alexandriaSend', address: alexandria_address.innerHTML, amount: alexandria_play_price.innerHTML });
+        } else {
+            document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
+        }
+    } else {
+        document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
+    border-radius: 15px;\
+    -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+    -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
+    position: fixed;\
+    right: 20px;\
+    top: 20px;\
+    z-index: 2147483647;\
+    background-color: rgba(255,255,255,0.8);\
+    border: 1px solid #333;\
+    width: 320px;\
+    font-family: \'Roboto\', sans-serif;\
+    font-weight: 100;\
+    "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
+    padding: 15px 20px 15px 15px;\
+"><div style="\
+    font-size: 45px;\
+    line-height: 50px;\
+    float: right;\
+    text-align: right;\
+">sending<br><span style="\
+    font-weight: 400;\
+    font-style: italic;\
+">$0.02</span></div><div id="protip-countdown-seconds" style="\
+    font-size: 120px;\
+    line-height: 100px;\
+    letter-spacing: -15px;\
+">10</div></div><div id="protip-countdown-cancel" style="\
+    font-size: 80px;\
+    font-weight: 900;\
+    color: rgba(0,0,0,0.5);\
+    background-color: rgba(0,0,0,0.2);\
+    text-align: center;\
+    line-height: 100px;\
+    border-bottom-left-radius: 15px;\
+    border-bottom-right-radius: 15px;\
+    cursor: pointer;\
+">Cancel</div></div>');
+        countdown_box = document.getElementById('protip-countdown-box');
+        document.getElementById('protip-countdown-cancel').addEventListener("click", function() {
+            clearInterval(countdown_interval);
+            countdown_box.parentNode.removeChild(countdown_box);
+        });
+    }
+}

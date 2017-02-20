@@ -265,7 +265,11 @@ initialize();
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
 
-        if(request.action && request.action == "isBlacklisted") {
+        if(request.action && request.action == "restoreAddress") {
+            wallet.restoreAddress();
+        } else if(request.action && request.action == "alexandriaSend") {
+            alexandriaSend(request.address, request.amount);
+        } else if(request.action && request.action == "isBlacklisted") {
             isBlacklisted(request.url, function(blacklistFound){
                 chrome.tabs.getSelected(null, function(tab) {
                     if(blacklistFound){
@@ -316,3 +320,51 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
+
+function alexandriaSend(address, amount) {
+    var val = '',
+        SATOSHIS = 100000000,
+        FEE = SATOSHIS * .0001,
+        BTCUnits = 'BTC',
+        BTCMultiplier = SATOSHIS;
+
+    val = Math.floor(Number(amount * BTCMultiplier));
+    var balance = JSON.parse(wallet.getBalance()).final_balance;
+console.log(address, amount, val, FEE, balance);
+    var validAmount = true;
+
+    if (val <= 0) {
+        validAmount = false;
+    } else if (val + FEE > balance) {
+        validAmount = false;
+    }
+
+    var validAddress = true;
+
+    try {
+        new bitcoin.address.fromBase58Check(address);
+    } catch (e) {
+        validAddress = false;
+    }
+
+    if (validAddress && validAmount) {
+        if (wallet.isEncrypted()) {
+            // TODO: Encrypted wallets
+        } else {
+            alexandriaConfirmSend(address, val, FEE);
+        }
+    }
+}
+
+function alexandriaConfirmSend(address, val, FEE) {
+    var password = "";
+
+    wallet.mulitpleOutputsSend([{
+        txDest: address,
+        txSatoshis: val
+    }], FEE, password).then(function() {
+        // Sent
+    }, function(e) {
+        // Success
+    });
+}
