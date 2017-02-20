@@ -454,7 +454,7 @@ function displayCountdown() {
             document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
         }
     } else {
-        var usd = parseFloat(document.getElementsByClassName('pwyw-usd-play-price-input')[0].value).toFixed(2);
+        var usd = document.getElementsByClassName('pwyw-usd-play-price-input')[0].value;
         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
     border-radius: 15px;\
     -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
