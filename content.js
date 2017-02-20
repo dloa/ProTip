@@ -454,6 +454,7 @@ function displayCountdown() {
             document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
         }
     } else {
+        var usd = parseFloat(document.getElementsByClassName('pwyw-usd-play-price-input')[0].value).toFixed(2);
         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
     border-radius: 15px;\
     -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
@@ -478,7 +479,7 @@ function displayCountdown() {
 ">sending<br><span style="\
     font-weight: 400;\
     font-style: italic;\
-">$0.02</span></div><div id="protip-countdown-seconds" style="\
+">$' + usd + '</span></div><div id="protip-countdown-seconds" style="\
     font-size: 120px;\
     line-height: 100px;\
     letter-spacing: -15px;\
