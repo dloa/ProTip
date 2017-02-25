@@ -20,7 +20,7 @@
         "background.js"
       ]
    },
-   "web_accessible_resources": ["assets/images/star.png"],
+   "web_accessible_resources": ["assets/images/star.png", "assets/images/play.png"],
    "content_scripts": [
        {
            "matches": ["http://*/*", "https://*/*"],
