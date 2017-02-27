@@ -269,6 +269,8 @@ chrome.runtime.onMessage.addListener(
             wallet.restoreAddress();
         } else if(request.action && request.action == "alexandriaSend") {
             alexandriaSend(request.address, request.amount);
+        } else if(request.action && request.action == "getAlexandriaAutopayCountdown") {
+            sendResponse({countdown: localStorage['alexandriaAutopayCountdown'] !== undefined ? localStorage['alexandriaAutopayCountdown'] : 10});
         } else if(request.action && request.action == "isBlacklisted") {
             isBlacklisted(request.url, function(blacklistFound){
                 chrome.tabs.getSelected(null, function(tab) {

@@ -44,6 +44,7 @@ $(function() {
     initAvailableCurrenciesOptions();
     initDefaultSubscriptionAmountFiat();
     initErrorLog();
+    initAlexandriaAutopayCountdown();
 
     allowExternalLinks();
 
@@ -94,5 +95,14 @@ function clearLog(){
     $('#console-log').empty();
 }
 
+function initAlexandriaAutopayCountdown() {
+    if (!localStorage['alexandriaAutopayCountdown']) {
+        localStorage['alexandriaAutopayCountdown'] = "10"
+    }
 
+    $('#alexandria-autopay-countdown').val(localStorage['alexandriaAutopayCountdown']);
 
+    $('#alexandria-autopay-countdown').change(function() {
+        localStorage['alexandriaAutopayCountdown'] = this.value;
+    });
+}

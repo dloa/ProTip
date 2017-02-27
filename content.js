@@ -490,12 +490,13 @@ if (location.hostname === "alexandria.io") {
                 document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
             }
         } else {
-            addCountdownBox(alexandria_sug_price);
-            countdown_box = document.getElementById('protip-countdown-box');
-            document.getElementById('protip-countdown-cancel').addEventListener("click", function() {
-                clearInterval(countdown_interval);
-                countdown_box.parentNode.removeChild(countdown_box);
-                countdown_box = false;
+            addCountdownBox(alexandria_sug_price, function(box, cancel) {
+                countdown_box = box;
+                cancel.addEventListener("click", function() {
+                    clearInterval(countdown_interval);
+                    countdown_box.parentNode.removeChild(countdown_box);
+                    countdown_box = false;
+                });
             });
         }
     }
@@ -524,12 +525,13 @@ if (location.hostname === "alexandria.io") {
                 document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
             }
         } else {
-            addCountdownBox("...");
-            countdown_box = document.getElementById('protip-countdown-box');
-            document.getElementById('protip-countdown-cancel').addEventListener("click", function() {
-                clearInterval(countdown_interval);
-                countdown_box.parentNode.removeChild(countdown_box);
-                countdown_box = false;
+            addCountdownBox("...", function(box, cancel) {
+                countdown_box = box;
+                cancel.addEventListener("click", function() {
+                    clearInterval(countdown_interval);
+                    countdown_box.parentNode.removeChild(countdown_box);
+                    countdown_box = false;
+                });
             });
         }
     }
@@ -833,44 +835,47 @@ if (location.hostname === "alexandria.io") {
     }
 }
 
-function addCountdownBox(price) {
-    document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
-        border-radius: 15px;\
-        -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-        -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
-        position: fixed;\
-        right: 20px;\
-        top: 20px;\
-        z-index: 2147483647;\
-        background-color: rgba(255,255,255,0.8);\
-        border: 1px solid #333;\
-        width: 320px;\
-        font-family: \'Roboto\', sans-serif;\
-        font-weight: 100;\
-        "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
-        padding: 15px 20px 15px 15px;\
-    "><div style="\
-        font-size: 45px;\
-        line-height: 50px;\
-        float: right;\
-        text-align: right;\
-    ">sending<br><span id="protip-countdown-usd" style="\
-        font-weight: 400;\
-        font-style: italic;\
-    ">$' + price + '</span></div><div id="protip-countdown-seconds" style="\
-        font-size: 120px;\
-        line-height: 100px;\
-        letter-spacing: -15px;\
-    ">10</div></div><div id="protip-countdown-cancel" style="\
-        font-size: 80px;\
-        font-weight: 900;\
-        color: rgba(0,0,0,0.5);\
-        background-color: rgba(0,0,0,0.2);\
-        text-align: center;\
-        line-height: 100px;\
-        border-bottom-left-radius: 15px;\
-        border-bottom-right-radius: 15px;\
-        cursor: pointer;\
-    ">Cancel</div></div>');
+function addCountdownBox(price, callback) {
+    chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
+        document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
+    border-radius: 15px;\
+    -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+    -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
+    position: fixed;\
+    right: 20px;\
+    top: 20px;\
+    z-index: 2147483647;\
+    background-color: rgba(255,255,255,0.8);\
+    border: 1px solid #333;\
+    width: 320px;\
+    font-family: \'Roboto\', sans-serif;\
+    font-weight: 100;\
+    "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
+    padding: 15px 20px 15px 15px;\
+"><div style="\
+    font-size: 45px;\
+    line-height: 50px;\
+    float: right;\
+    text-align: right;\
+">sending<br><span id="protip-countdown-usd" style="\
+    font-weight: 400;\
+    font-style: italic;\
+">$' + price + '</span></div><div id="protip-countdown-seconds" style="\
+    font-size: 120px;\
+    line-height: 100px;\
+    letter-spacing: -15px;\
+">' + response.countdown + '</div></div><div id="protip-countdown-cancel" style="\
+    font-size: 80px;\
+    font-weight: 900;\
+    color: rgba(0,0,0,0.5);\
+    background-color: rgba(0,0,0,0.2);\
+    text-align: center;\
+    line-height: 100px;\
+    border-bottom-left-radius: 15px;\
+    border-bottom-right-radius: 15px;\
+    cursor: pointer;\
+">Cancel</div></div>');
+        callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
+    });
 }
