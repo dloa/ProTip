@@ -633,14 +633,17 @@ if (location.hostname === "alexandria.io") {
         }
     }
 
-    $(document).ready(function() { $('a .fbStoryAttachmentImage').each(function(index, element) {
-        var anchor = $(element).closest('a')[0];
-        var link = anchor.href.indexOf("//l.facebook.com/l.php?u=") > -1 ? anchor.href.substring(anchor.href.indexOf("?u=") + 3, anchor.href.indexOf("&") > -1 ? anchor.href.indexOf("&") : undefined) : anchor.href;
-        link = decodeURIComponent(link);
-        console.log(link);
-        if (link.indexOf("https://alexandria.io/dev-browser/media/") > -1) {
-            // Add play button
-            element.insertAdjacentHTML('beforeend', '<style>\
+    function initPaidSocialEmbeds() {
+        $('a .fbStoryAttachmentImage').each(function(index, element) {
+            var anchor = $(element).closest('a')[0];
+            if ($(anchor).data("alexandria-checked")) return;
+            $(anchor).data("alexandria-checked", true);
+            var link = anchor.href.indexOf("//l.facebook.com/l.php?u=") > -1 ? anchor.href.substring(anchor.href.indexOf("?u=") + 3, anchor.href.indexOf("&") > -1 ? anchor.href.indexOf("&") : undefined) : anchor.href;
+            link = decodeURIComponent(link);
+            console.log(link);
+            if (link.indexOf("https://alexandria.io/dev-browser/media/") > -1) {
+                // Add play button
+                element.insertAdjacentHTML('beforeend', '<style>\
     .h72kvmsojg601yi3 {\
         background-image: url(' + chrome.extension.getURL("assets/images/play.png") + ');\
         background-repeat: no-repeat;\
@@ -660,91 +663,95 @@ if (location.hostname === "alexandria.io") {
 </style>\
 <i class="h72kvmsojg601yi3"></i>');
 
-            // Get identifier and set click listener
-            var identifier = link.substring(40);
-            anchor.addEventListener("click", function(e) {
-                e.preventDefault();
+                // Get identifier and set click listener
+                var identifier = link.substring(40);
+                anchor.addEventListener("click", function(e) {
+                    e.preventDefault();
 
-                // Set element which innerHTML is replaced
-                facebook_stuff_element = $(element).closest('[data-ft]')[0];
+                    // Set element which innerHTML is replaced
+                    facebook_stuff_element = $(element).closest('[data-ft]')[0];
 
-                // Prepare wallet and start countdown
-                chrome.runtime.sendMessage({ action: 'restoreAddress' });
-                displayCountdown();
-                countdown_interval = setInterval(displayCountdown, 1000);
+                    // Prepare wallet and start countdown
+                    chrome.runtime.sendMessage({ action: 'restoreAddress' });
+                    displayCountdown();
+                    countdown_interval = setInterval(displayCountdown, 1000);
 
-                // Get USD rate
-                getUSDdayAvg();
+                    // Get USD rate
+                    getUSDdayAvg();
 
-                // Get media info
-                $.post("https://api.alexandria.io/alexandria/v1/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function(data) {
-                    data = JSON.parse(data).response[0]["media-data"];
-                    var media = data['alexandria-media'];
-                    var info = media.info;
-                    var xinfo = info['extra-info'];
-                    var payment = media.payment;
-                    var ipfsAddr = xinfo['DHT Hash'];
-                    var tracks = fixDataMess(xinfo);
+                    // Get media info
+                    $.post("https://api.alexandria.io/alexandria/v1/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function(data) {
+                        data = JSON.parse(data).response[0]["media-data"];
+                        var media = data['alexandria-media'];
+                        var info = media.info;
+                        var xinfo = info['extra-info'];
+                        var payment = media.payment;
+                        var ipfsAddr = xinfo['DHT Hash'];
+                        var tracks = fixDataMess(xinfo);
 
-                    // This sets a global mainFile object to the main object.
-                    if (!xinfo['files']) {
-                        xinfo['files'] = [];
-                        var i = 0;
-                        tracks.forEach( function (file) {
-                            xinfo['files'][i] = {
-                                fname: file,
-                                runtime: xinfo['runtime'],
-                                minBuy: 0,
-                                sugBuy: 0,
-                                minPlay: 0,
-                                sugPlay: 0,
-                            }
-                            if (payment) {
-                                xinfo['files'][i]['type'] = payment['type'];
-                                console.log('Artifact uses old payment format');
-                            }
-                            if (xinfo['pwyw']) {
-                                var pwywArray = xinfo['pwyw'].split(',');
-                                xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
-                                xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
-                                xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
-                            } else {
-                                xinfo['files'][i]['sugBuy'] = 0;
-                                xinfo['files'][i]['sugPlay'] =  0;
-                                xinfo['files'][i]['minBuy'] =  0;
-                            }
-                            i++
-                        });
-                    }
-                    mainFile = {
-                        track: xinfo['files'][0],
-                        name: xinfo['files'][0].dname,
-                        url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
-                        sugPlay: xinfo['files'][0].sugPlay,
-                        minPlay: xinfo['files'][0].minPlay,
-                        sugBuy: xinfo['files'][0].sugBuy,
-                        minBuy: xinfo['files'][0].minBuy
-                    };
-                    facebook_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
-                    console.info(facebook_filetype);
-
-                    // Setup play button if we can play it
-                    if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
-                        if (xinfo['Bitcoin Address']) {
-                            facebook_bitcoin_address = xinfo['Bitcoin Address'];
-                            setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
-                        } else {
-                            var tradebotURL = 'https://api.alexandria.io/tradebot';
-                            getTradeBotBitcoinAddress(media.publisher, function(data) {
-                                facebook_bitcoin_address = data;
-                                setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
+                        // This sets a global mainFile object to the main object.
+                        if (!xinfo['files']) {
+                            xinfo['files'] = [];
+                            var i = 0;
+                            tracks.forEach( function (file) {
+                                xinfo['files'][i] = {
+                                    fname: file,
+                                    runtime: xinfo['runtime'],
+                                    minBuy: 0,
+                                    sugBuy: 0,
+                                    minPlay: 0,
+                                    sugPlay: 0,
+                                }
+                                if (payment) {
+                                    xinfo['files'][i]['type'] = payment['type'];
+                                    console.log('Artifact uses old payment format');
+                                }
+                                if (xinfo['pwyw']) {
+                                    var pwywArray = xinfo['pwyw'].split(',');
+                                    xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
+                                    xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
+                                    xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
+                                } else {
+                                    xinfo['files'][i]['sugBuy'] = 0;
+                                    xinfo['files'][i]['sugPlay'] =  0;
+                                    xinfo['files'][i]['minBuy'] =  0;
+                                }
+                                i++
                             });
                         }
-                    }
+                        mainFile = {
+                            track: xinfo['files'][0],
+                            name: xinfo['files'][0].dname,
+                            url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
+                            sugPlay: xinfo['files'][0].sugPlay,
+                            minPlay: xinfo['files'][0].minPlay,
+                            sugBuy: xinfo['files'][0].sugBuy,
+                            minBuy: xinfo['files'][0].minBuy
+                        };
+                        facebook_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
+                        console.info(facebook_filetype);
+
+                        // Setup play button if we can play it
+                        if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
+                            if (xinfo['Bitcoin Address']) {
+                                facebook_bitcoin_address = xinfo['Bitcoin Address'];
+                                setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
+                            } else {
+                                var tradebotURL = 'https://api.alexandria.io/tradebot';
+                                getTradeBotBitcoinAddress(media.publisher, function(data) {
+                                    facebook_bitcoin_address = data;
+                                    setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
+                                });
+                            }
+                        }
+                    });
                 });
-            });
-        }
-    }); });
+            }
+        });
+    }
+
+    $(document).ready(initPaidSocialEmbeds);
+    setInterval(initPaidSocialEmbeds, 1000);
 
     function setFacebookPlayInfo(file, xinfo, artifactType) {
         if (file.type == artifactType) {
