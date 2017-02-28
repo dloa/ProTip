@@ -439,11 +439,15 @@ if (location.hostname === "alexandria.io") {
     var countdown_interval;
     var countdown_box;
 
-    var elements = document.querySelectorAll(".pwyw-item, .playlist td");
+    function initClicks() {
+        var elements = document.querySelectorAll(".pwyw-item, .playlist td");
 
-    for (var i = 0; i < elements.length; i++) {
-        elements[i].addEventListener('click', onClickPay);
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].addEventListener('click', onClickPay);
+        }
     }
+
+    $(document).ready(initClicks);
 
     function onClickPay(e) {
         var self = e.target;
@@ -461,9 +465,12 @@ if (location.hostname === "alexandria.io") {
             alexandria_sug_price = fileData.sugPlay ? fileData.sugPlay : 0;
 		}
 
-        var price = document.querySelector('.tb-price-' + alexandria_action + ' .price').innerHTML;
-        if (!fileData.length) alexandria_sug_price = price ? price : 0;
-        console.log(fileData, price);
+        if (!fileData.length) {
+            var price_element = document.querySelector('.playlist tr.active .tb-price-' + alexandria_action + ' .price');
+            alexandria_sug_price = price_element !== null && price_element.innerHTML.toLowerCase().indexOf("free") === -1 ? price_element.innerHTML : 0;
+        }
+        
+        console.log(fileData, alexandria_sug_price);
 
         // Do we have to pay anything?
         // if (alexandria_min_price === 0 || alexandria_min_price === undefined || alexandria_min_price == NaN) return;
@@ -484,7 +491,10 @@ if (location.hostname === "alexandria.io") {
                 if (alexandria_address.innerHTML && amount) {
                     clearInterval(countdown_interval);
                     countdown_box.parentNode.removeChild(countdown_box);
-                    chrome.runtime.sendMessage({ action: 'alexandriaSend', address: alexandria_address.innerHTML, amount: amount });
+                    countdown_box = false;
+                    chrome.runtime.sendMessage({ action: 'alexandriaSend', address: alexandria_address.innerHTML, amount: amount }, function(response) {
+                        if (response && response.error) alert(response.error);
+                    });
                 }
             } else {
                 document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
@@ -519,7 +529,10 @@ if (location.hostname === "alexandria.io") {
                 if (facebook_amount && facebook_payment_address) {
                     clearInterval(countdown_interval);
                     countdown_box.parentNode.removeChild(countdown_box);
-                    chrome.runtime.sendMessage({ action: 'alexandriaSend', address: facebook_payment_address, amount: facebook_amount });
+                    countdown_box = false;
+                    chrome.runtime.sendMessage({ action: 'alexandriaSend', address: facebook_payment_address, amount: facebook_amount }, function(response) {
+                        response && response.error ? alert(response.error) : onPaymentDone(facebook_file_data);
+                    });
                 }
             } else {
                 document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
@@ -552,7 +565,7 @@ if (location.hostname === "alexandria.io") {
         return Math.round((Number(amount)*facebook_day_avg).toString().substring(0, 16)*100)/100
     }
 
-    function makePaymentToAddress(address, minAmt, sugAmt, done) {
+    function makePaymentToAddress(address, minAmt, sugAmt) {
         var URL_RECV = "https://api.alexandria.io/payproc/receive";
 
         var amountInBTC = USDToBTC(minAmt);
@@ -565,72 +578,9 @@ if (location.hostname === "alexandria.io") {
             console.log("Payment address", data.input_address, "Amount:", sugAmt);
             facebook_payment_address = data.input_address;
             facebook_amount = USDToBTC(sugAmt);
-            watchForpayment(data.input_address, minAmt, done);
         });
 
         return USDToBTC(sugAmt);
-    }
-    
-    var paymentTimeout;
-    var restartWebSocket = true;
-    var recievedPartial = false;
-
-    function watchForpayment(address, amount, done) {
-        done = done || function () {};
-        if (amount <= 0) {
-            return done(amount);
-        }
-
-        bitcoinWebsocket = new WebSocket("wss://ws.blockchain.info/inv");
-
-        bitcoinWebsocket.onopen = function(evt){
-            console.log('Websocket Opened...');
-            bitcoinWebsocket.send('{"op":"addr_sub", "addr":"' + address + '"}');
-        }
-
-        bitcoinWebsocket.onmessage = function(evt){
-            var received_msg = evt.data;
-            var message = JSON.parse(received_msg);
-            if (message.op == "utx"){
-                console.log(message);
-                console.log("Recieved transaction, hash: " + message.x.hash);
-                
-                var bitsRecieved = 0;
-
-                for (var i = 0; i < message.x.out.length; i++) {
-                    if (message.x.out[i].addr == address){
-                        bitsRecieved = message.x.out[i].value;
-                        console.log("Bits Recieved: " + bitsRecieved);
-                    }
-                }
-
-                // This converts it from bits to full Bitcoin (i.e. 13312 bits would become 0.00013312 BTC);
-                var formattedBTCRecieved = bitsRecieved/100000000;
-
-                // amountPaid is the value in USD recieved.
-                var amountPaid = BTCtoUSD(formattedBTCRecieved);
-                console.log("Recieved $" + amountPaid);
-
-                var amountRequired = amount;
-
-                if (amountPaid >= amountRequired){
-                    done(amountPaid);
-
-                    restartWebSocket = false;
-                    bitcoinWebsocket.close();
-                } else {
-                    recievedPartial = true;
-                }
-            }
-        }
-
-        bitcoinWebsocket.onclose = function(evt){
-            // Sometimes the websocket will timeout or close, when it does just respawn the thread.
-            console.log("Websocket Closed")
-
-            if (restartWebSocket)
-                setTimeout(function(){ watchForpayment(address, amount, done); }, 200);
-        }
     }
 
     function initPaidSocialEmbeds() {
@@ -737,7 +687,6 @@ if (location.hostname === "alexandria.io") {
                                 facebook_bitcoin_address = xinfo['Bitcoin Address'];
                                 setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
                             } else {
-                                var tradebotURL = 'https://api.alexandria.io/tradebot';
                                 getTradeBotBitcoinAddress(media.publisher, function(data) {
                                     facebook_bitcoin_address = data;
                                     setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
@@ -768,9 +717,7 @@ if (location.hostname === "alexandria.io") {
 
                 function checkForPrice() {
                     if (facebook_day_avg) {
-                        var btcprice = makePaymentToAddress(btcAddress, price, sugPrice, function () {
-                            return onPaymentDone(fileData);
-                        });
+                        var btcprice = makePaymentToAddress(btcAddress, price, sugPrice);
                     } else {
                         setTimeout(checkForPrice, 100);
                     }
@@ -836,6 +783,7 @@ if (location.hostname === "alexandria.io") {
     }
 
     function getTradeBotBitcoinAddress(floaddress, callback){
+        var tradebotURL = 'https://api.alexandria.io/tradebot';
         $.get(tradebotURL+"/depositaddress?floaddress=" + floaddress + '&raw', function(data){
             callback(data.responseText);
         })

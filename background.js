@@ -268,7 +268,9 @@ chrome.runtime.onMessage.addListener(
         if(request.action && request.action == "restoreAddress") {
             wallet.restoreAddress();
         } else if(request.action && request.action == "alexandriaSend") {
-            alexandriaSend(request.address, request.amount);
+            alexandriaSend(request.address, request.amount, function(error) {
+                sendResponse({error: error});
+            });
         } else if(request.action && request.action == "getAlexandriaAutopayCountdown") {
             sendResponse({countdown: localStorage['alexandriaAutopayCountdown'] !== undefined ? localStorage['alexandriaAutopayCountdown'] : 10});
         } else if(request.action && request.action == "isBlacklisted") {
@@ -323,7 +325,7 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
-function alexandriaSend(address, amount) {
+function alexandriaSend(address, amount, callback) {
     var val = '',
         SATOSHIS = 100000000,
         FEE = SATOSHIS * .0001,
@@ -332,29 +334,22 @@ function alexandriaSend(address, amount) {
 
     val = Math.floor(Number(amount * BTCMultiplier));
     var balance = JSON.parse(wallet.getBalance()).final_balance;
-console.log(address, amount, val, FEE, balance);
-    var validAmount = true;
+    console.log(address, amount, val, FEE, balance);
 
-    if (val <= 0) {
-        validAmount = false;
-    } else if (val + FEE > balance) {
-        validAmount = false;
-    }
-
-    var validAddress = true;
+    if (val <= 0) return callback("Value less than or equal to 0");
+    if (val + FEE > balance) return callback("Value plus fee greater than current wallet balance");
 
     try {
         new bitcoin.address.fromBase58Check(address);
     } catch (e) {
-        validAddress = false;
+        return callback("Invalid receiving address");
     }
 
-    if (validAddress && validAmount) {
-        if (wallet.isEncrypted()) {
-            // TODO: Encrypted wallets
-        } else {
-            alexandriaConfirmSend(address, val, FEE);
-        }
+    if (wallet.isEncrypted()) {
+        // TODO: Encrypted wallets
+        return callback("Wallet is encrypted");
+    } else {
+        alexandriaConfirmSend(address, val, FEE);
     }
 }
 
@@ -364,9 +359,9 @@ function alexandriaConfirmSend(address, val, FEE) {
     wallet.mulitpleOutputsSend([{
         txDest: address,
         txSatoshis: val
-    }], FEE, password).then(function() {
-        // Sent
-    }, function(e) {
-        // Success
+    }], FEE, password).then(function(response) {
+        console.info(response);
+    }, function(error) {
+        console.error(error);
     });
 }
