@@ -591,7 +591,7 @@ if (location.hostname === "alexandria.io") {
             var link = anchor.href.indexOf("//l.facebook.com/l.php?u=") > -1 ? anchor.href.substring(anchor.href.indexOf("?u=") + 3, anchor.href.indexOf("&") > -1 ? anchor.href.indexOf("&") : undefined) : anchor.href;
             link = decodeURIComponent(link);
             console.log(link);
-            if (link.indexOf("https://alexandria.io/dev-browser/media/") > -1) {
+            if (link.indexOf("https://alexandria.io/browser/media/") > -1) {
                 // Add play button
                 element.insertAdjacentHTML('beforeend', '<style>\
     .h72kvmsojg601yi3 {\
