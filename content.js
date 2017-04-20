@@ -591,7 +591,7 @@ if (location.hostname === "alexandria.io") {
             var link = anchor.href.indexOf("//l.facebook.com/l.php?u=") > -1 ? anchor.href.substring(anchor.href.indexOf("?u=") + 3, anchor.href.indexOf("&") > -1 ? anchor.href.indexOf("&") : undefined) : anchor.href;
             link = decodeURIComponent(link);
             console.log(link);
-            if (link.indexOf("https://alexandria.io/browser/media/") > -1) {
+            if (link.indexOf("https://alexandria.io/browser/") > -1) {
                 // Add play button
                 element.insertAdjacentHTML('beforeend', '<style>\
     .h72kvmsojg601yi3 {\
@@ -614,7 +614,7 @@ if (location.hostname === "alexandria.io") {
 <i class="h72kvmsojg601yi3"></i>');
 
                 // Get identifier and set click listener
-                var identifier = link.substring(40);
+                var identifier = link.substring(30);
                 anchor.addEventListener("click", function(e) {
                     e.preventDefault();
 
@@ -630,8 +630,12 @@ if (location.hostname === "alexandria.io") {
                     getUSDdayAvg();
 
                     // Get media info
-                    $.post("https://api.alexandria.io/alexandria/v1/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function(data) {
+                    $.post("https://api.alexandria.io/alexandria/v2/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function(data) {
                         data = JSON.parse(data).response[0]["media-data"];
+                        if (!data) {
+                          console.error("OIP not supported.");
+                          return;
+                        }
                         var media = data['alexandria-media'];
                         var info = media.info;
                         var xinfo = info['extra-info'];
