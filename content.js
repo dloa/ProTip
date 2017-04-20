@@ -497,7 +497,25 @@ if (location.hostname === "alexandria.io") {
                     });
                 }
             } else {
-                document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
+              document.getElementById('protip-countdown-seconds').innerHTML = isNaN(seconds) ? 0 : seconds - 1;
+              var i = seconds - 1;
+              if (i == 0) {
+                $('#protip-countdown-seconds').css('font-size', '15px');
+                $('#protip-countdown-seconds').text('sending...');
+                $('#circle').css('stroke', '#6fdb6f');
+                $('#circle').css('stroke-dashoffset', 0);
+                return;
+              }
+              //$('h2').text(i);
+              // If there are 3 or less seconds less, turn the svg color red
+              if (i <= 6 && i > 3){
+                $('#circle').css('stroke', '#FF9800');
+              }
+              // If there are 3 or less seconds less, turn the svg color red
+              if (i <= 3){
+                $('#circle').css('stroke', '#FF0000');
+              }
+              $('#circle').css('stroke-dashoffset', 440-(seconds-1)*(440/10));
             }
         } else {
             addCountdownBox(alexandria_sug_price, function(box, cancel) {
@@ -788,48 +806,71 @@ var social_countdown_interval;
 var social_countdown_box;
 
 function addCountdownBox(price, callback) {
-    chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
-        document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
-    border-radius: 15px;\
-    -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-    -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
-    position: fixed;\
-    right: 20px;\
-    top: 20px;\
-    z-index: 2147483647;\
-    background-color: rgba(255,255,255,0.8);\
-    border: 1px solid #333;\
-    width: 320px;\
-    font-family: \'Roboto\', sans-serif;\
-    font-weight: 100;\
-    "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
-    padding: 15px 20px 15px 15px;\
-"><div style="\
-    font-size: 45px;\
-    line-height: 50px;\
-    float: right;\
-    text-align: right;\
-">sending<br><span id="protip-countdown-usd" style="\
-    font-weight: 400;\
-    font-style: italic;\
-">$' + price + '</span></div><div id="protip-countdown-seconds" style="\
-    font-size: 120px;\
-    line-height: 100px;\
-    letter-spacing: -15px;\
-">' + response.countdown + '</div></div><div id="protip-countdown-cancel" style="\
-    font-size: 80px;\
-    font-weight: 900;\
-    color: rgba(0,0,0,0.5);\
-    background-color: rgba(0,0,0,0.2);\
-    text-align: center;\
-    line-height: 100px;\
-    border-bottom-left-radius: 15px;\
-    border-bottom-right-radius: 15px;\
-    cursor: pointer;\
-">Cancel</div></div>');
-        callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
-    });
+//     chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
+//         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
+//     border-radius: 15px;\
+//     -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+//     -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
+//     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
+//     position: fixed;\
+//     right: 20px;\
+//     top: 20px;\
+//     z-index: 2147483647;\
+//     background-color: rgba(255,255,255,0.8);\
+//     border: 1px solid #333;\
+//     width: 320px;\
+//     font-family: \'Roboto\', sans-serif;\
+//     font-weight: 100;\
+//     "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
+//     padding: 15px 20px 15px 15px;\
+// "><div style="\
+//     font-size: 45px;\
+//     line-height: 50px;\
+//     float: right;\
+//     text-align: right;\
+// ">sending<br><span id="protip-countdown-usd" style="\
+//     font-weight: 400;\
+//     font-style: italic;\
+// ">$' + price + '</span></div><div id="protip-countdown-seconds" style="\
+//     font-size: 120px;\
+//     line-height: 100px;\
+//     letter-spacing: -15px;\
+// ">' + response.countdown + '</div></div><div id="protip-countdown-cancel" style="\
+//     font-size: 80px;\
+//     font-weight: 900;\
+//     color: rgba(0,0,0,0.5);\
+//     background-color: rgba(0,0,0,0.2);\
+//     text-align: center;\
+//     line-height: 100px;\
+//     border-bottom-left-radius: 15px;\
+//     border-bottom-right-radius: 15px;\
+//     cursor: pointer;\
+// ">Cancel</div></div>');
+//         callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
+//     });
+
+  chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
+    document.body.insertAdjacentHTML('beforeend', '\
+      <div id="protip-countdown-box" style="z-index: 2147483647;margin:0; padding:0;line-height: 1;font-family: OpenSans; position: fixed; right: 20px; top: 20px;display:block;opacity:0.85;background-color:#F7F6F5;box-shadow:0 0 32px 0 rgba(0,0,0,0.19);border-radius:11.5px;color:#f7f6f5;width:371px;height:350px;text-align: center">\
+  	  <div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + price + '</strong> to</p></div>\
+     	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">The Biddy Bums</p></div>\
+        <div class="item" style="padding-right: 30%; padding-left: 30%;position: relative; float: left;">\
+          <h2 id="protip-countdown-seconds" style="text-align:center; position: absolute; margin-top: 20px; line-height: 125px; font-size: 50px; width: 160px; color: #000;">' + response.countdown + '</h2>\
+          <svg width="160" height="160" xmlns="http://www.w3.org/2000/svg" style="-webkit-transform: rotate(-90deg); transform: rotate(-90deg);">\
+            <g>\
+              <title>l1</title>\
+              <circle id="circle" stroke-dasharray="440" stroke-dashoffset="440" r="69.85699" cy="81" cx="81" stroke-width="8" stroke="#6fdb6f" fill="none"/>\
+            </g>\
+          </svg>\
+        </div>\
+        <div style="margin-top: 10px">\
+          <button id="protip-countdown-cancel" style="border: none;outline: none;width: 200px;margin-top: 10px;background: #CA0018; border-radius: 4.6px; margin-left: auto; margin-right: auto;" onmouseover="this.style.background = \'#940213\'; this.style.cursor = \'pointer\';" onmouseleave="this.style.background = \'#CA0018\'; this.style.cursor = \'inherit\';"><span style="font-family: OpenSans;font-size: 18px;color: #FFFFFF;margin-top: 10px;height:40px;line-height: 40px;text-align: center">Cancel Payment</span></button>\
+        </div>\
+      </div>');
+    $('#circle').css('stroke-dashoffset', 0);
+    $('#circle').css('transition', 'all 1s linear');
+    callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
+  });
 }
 
 function facebookLoadTrack(name, url, fname) {
@@ -925,13 +966,31 @@ function socialDisplayCountdown() {
         clearInterval(social_countdown_interval);
         social_countdown_box.parentNode.removeChild(social_countdown_box);
         social_countdown_box = false;
-        // chrome.runtime.sendMessage({ action: 'alexandriaSend', address: social_payment_address, amount: social_amount }, function(response) {
-        //   response && response.error ? alert(response.error) : onPaymentDone(social_file_data);
-        // });
-        onPaymentDone(social_file_data);
+        chrome.runtime.sendMessage({ action: 'alexandriaSend', address: social_payment_address, amount: social_amount }, function(response) {
+          response && response.error ? alert(response.error) : onPaymentDone(social_file_data);
+        });
+        //onPaymentDone(social_file_data);
       }
     } else {
-      document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
+      document.getElementById('protip-countdown-seconds').innerHTML = isNaN(seconds) ? 0 : seconds - 1;
+      var i = seconds - 1;
+      if (i == 0) {
+        $('#protip-countdown-seconds').css('font-size', '15px');
+        $('#protip-countdown-seconds').text('sending...');
+        $('#circle').css('stroke', '#6fdb6f');
+        $('#circle').css('stroke-dashoffset', 0);
+        return;
+      }
+      //$('h2').text(i);
+      // If there are 3 or less seconds less, turn the svg color red
+      if (i <= 6 && i > 3){
+        $('#circle').css('stroke', '#FF9800');
+      }
+      // If there are 3 or less seconds less, turn the svg color red
+      if (i <= 3){
+        $('#circle').css('stroke', '#FF0000');
+      }
+      $('#circle').css('stroke-dashoffset', 440-(seconds-1)*(440/10));
     }
   } else {
     addCountdownBox("...", function(box, cancel) {
