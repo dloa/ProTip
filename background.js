@@ -261,12 +261,31 @@ function initialize() {
 
 initialize();
 
-
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-
         if(request.action && request.action == "restoreAddress") {
             wallet.restoreAddress();
+        } else if(request.action && request.action.includes("import-priv")) {
+        	console.log(request);
+        	if (request.event)
+        		console.log(JSON.parse(request.event));
+            // parse private key from page
+            var privKey = request.action.split(",")[1];
+            wallet.importAddress('', privKey).then(function() {
+            	console.log("Successfully imported Private key");
+	            //chrome.tabs.sendMessage(sender.id, {type: "to-page", message: "success!"}, null, function(res){
+	            	// console.log(res);
+	            // });
+	            console.log(sender, sendResponse);
+	            sendResponse(true);
+	        }, function(e) {
+	        	console.log("Error importing private key: " + e);
+	            if (e.message === 'Incorrect password') {
+	                //chrome.runtime.connect().postMessage({type: "to-page", message: "error!"});
+	            } else {
+	                //chrome.runtime.connect().postMessage({type: "to-page", message: "error!"});
+	            }
+	        });
         } else if(request.action && request.action == "alexandriaSend") {
             alexandriaSend(request.address, request.amount, function(error) {
                 sendResponse({error: error});
