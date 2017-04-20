@@ -497,7 +497,25 @@ if (location.hostname === "alexandria.io") {
                     });
                 }
             } else {
-                document.getElementById('protip-countdown-seconds').innerHTML = seconds - 1;
+                document.getElementById('protip-countdown-seconds').innerHTML = isNaN(seconds) ? 0 : seconds - 1;
+                var i = seconds - 1;
+                if (i == 0) { 	
+                	$('#protip-countdown-seconds').css('font-size', '15px');
+                	$('#protip-countdown-seconds').text('sending...');
+					$('#circle').css('stroke', '#6fdb6f');
+					$('#circle').css('stroke-dashoffset', 0);
+					return;
+			    }
+			    //$('h2').text(i);
+			    // If there are 3 or less seconds less, turn the svg color red
+			    if (i <= 6 && i > 3){
+			    	$('#circle').css('stroke', '#FF9800');
+			    }
+			    // If there are 3 or less seconds less, turn the svg color red
+			    if (i <= 3){
+			    	$('#circle').css('stroke', '#FF0000');
+			    }
+			    $('#circle').css('stroke-dashoffset', 440-(seconds-1)*(440/10));
             }
         } else {
             addCountdownBox(alexandria_sug_price, function(box, cancel) {
@@ -791,7 +809,7 @@ if (location.hostname === "alexandria.io") {
 }
 
 function addCountdownBox(price, callback) {
-    chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
+    /*chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
     border-radius: 15px;\
     -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
@@ -831,6 +849,29 @@ function addCountdownBox(price, callback) {
     border-bottom-right-radius: 15px;\
     cursor: pointer;\
 ">Cancel</div></div>');
+        callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
+    });*/
+
+    chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
+        document.body.insertAdjacentHTML('beforeend', '\
+        	<div id="protip-countdown-box" style="z-index: 2147483647;margin:0; padding:0;line-height: 1;font-family: OpenSans; position: fixed; right: 20px; top: 20px;display:block;opacity:0.85;background-color:#F7F6F5;box-shadow:0 0 32px 0 rgba(0,0,0,0.19);border-radius:11.5px;color:#f7f6f5;width:371px;height:350px;text-align: center">\
+				<div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + price + '</strong> to</p></div>\
+		    	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">The Biddy Bums</p></div>\
+		    	<div class="item" style="padding-right: 30%; padding-left: 30%;position: relative; float: left;">\
+				    <h2 id="protip-countdown-seconds" style="text-align:center; position: absolute; margin-top: 20px; line-height: 125px; font-size: 50px; width: 160px; color: #000;">' + response.countdown + '</h2>\
+				    <svg width="160" height="160" xmlns="http://www.w3.org/2000/svg" style="-webkit-transform: rotate(-90deg); transform: rotate(-90deg);">\
+				     <g>\
+				      <title>l1</title>\
+				      <circle id="circle" stroke-dasharray="440" stroke-dashoffset="440" r="69.85699" cy="81" cx="81" stroke-width="8" stroke="#6fdb6f" fill="none"/>\
+				     </g>\
+				    </svg>\
+				</div>\
+				<div style="margin-top: 10px">\
+					<button id="protip-countdown-cancel" style="border: none;outline: none;width: 200px;margin-top: 10px;background: #CA0018; border-radius: 4.6px; margin-left: auto; margin-right: auto;" onmouseover="this.style.background = \'#940213\'; this.style.cursor = \'pointer\';" onmouseleave="this.style.background = \'#CA0018\'; this.style.cursor = \'inherit\';"><span style="font-family: OpenSans;font-size: 18px;color: #FFFFFF;margin-top: 10px;height:40px;line-height: 40px;text-align: center">Cancel Payment</span></button>\
+		    	</div>\
+		    </div>');
+        $('#circle').css('stroke-dashoffset', 0);
+		$('#circle').css('transition', 'all 1s linear');
         callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
     });
 }
