@@ -233,6 +233,7 @@ $(function() {
       for(var i=0;i < addedNodes.length;i++){
         scanText(addedNodes[i]);
         scanLinks();
+        //v();
         // (1) All found bitcoin addresses found in the links and text are tagged
         // with the green bordered UI.
         // (2) We loop over all tagged elements and check and submit the
@@ -518,7 +519,8 @@ if (location.hostname === "alexandria.io") {
 			    $('#circle').css('stroke-dashoffset', 440-(seconds-1)*(440/10));
             }
         } else {
-            addCountdownBox(alexandria_sug_price, function(box, cancel) {
+        	var artistName = document.getElementsByClassName("media-artist")[0].innerHTML;
+            addCountdownBox(alexandria_sug_price, artistName, function(box, cancel) {
                 countdown_box = box;
                 cancel.addEventListener("click", function() {
                     clearInterval(countdown_interval);
@@ -808,7 +810,7 @@ if (location.hostname === "alexandria.io") {
     }
 }
 
-function addCountdownBox(price, callback) {
+function addCountdownBox(price, artistName, callback) {
     /*chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
     border-radius: 15px;\
@@ -856,7 +858,7 @@ function addCountdownBox(price, callback) {
         document.body.insertAdjacentHTML('beforeend', '\
         	<div id="protip-countdown-box" style="z-index: 2147483647;margin:0; padding:0;line-height: 1;font-family: OpenSans; position: fixed; right: 20px; top: 20px;display:block;opacity:0.85;background-color:#F7F6F5;box-shadow:0 0 32px 0 rgba(0,0,0,0.19);border-radius:11.5px;color:#f7f6f5;width:371px;height:350px;text-align: center">\
 				<div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + price + '</strong> to</p></div>\
-		    	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">The Biddy Bums</p></div>\
+		    	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">' + artistName + '</p></div>\
 		    	<div class="item" style="padding-right: 30%; padding-left: 30%;position: relative; float: left;">\
 				    <h2 id="protip-countdown-seconds" style="text-align:center; position: absolute; margin-top: 20px; line-height: 125px; font-size: 50px; width: 160px; color: #000;">' + response.countdown + '</h2>\
 				    <svg width="160" height="160" xmlns="http://www.w3.org/2000/svg" style="-webkit-transform: rotate(-90deg); transform: rotate(-90deg);">\
