@@ -857,7 +857,7 @@ function addCountdownBox(price, artistName, callback) {
     chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
         document.body.insertAdjacentHTML('beforeend', '\
         	<div id="protip-countdown-box" style="z-index: 2147483647;margin:0; padding:0;line-height: 1;font-family: OpenSans; position: fixed; right: 20px; top: 20px;display:block;opacity:0.85;background-color:#F7F6F5;box-shadow:0 0 32px 0 rgba(0,0,0,0.19);border-radius:11.5px;color:#f7f6f5;width:371px;height:350px;text-align: center">\
-				<div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + price + '</strong> to</p></div>\
+				<div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + parseFloat(price).toFixed(2) + '</strong> to</p></div>\
 		    	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">' + artistName + '</p></div>\
 		    	<div class="item" style="padding-right: 30%; padding-left: 30%;position: relative; float: left;">\
 				    <h2 id="protip-countdown-seconds" style="text-align:center; position: absolute; margin-top: 20px; line-height: 125px; font-size: 50px; width: 160px; color: #000;">' + response.countdown + '</h2>\
