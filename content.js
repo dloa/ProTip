@@ -1073,7 +1073,7 @@ function onPaymentDone(file) {
 
   if (location.hostname === "twitter.com")
     twitterLoadTrack(file.track.dname, trackPath, file.track.fname);
-  else if (location.hostname === "facebook.com")
+  else if (location.hostname === "www.facebook.com")
     facebookLoadTrack(file.track.dname, trackPath, file.track.fname);
 }
 
