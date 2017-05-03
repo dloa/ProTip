@@ -656,142 +656,12 @@ if (location.hostname === "alexandria.io") {
   console.log("Initializing twitter for social embeds");
 
   function initPaidTwitterEmbeds() {
-    console.log("Checking twitter embeds");
-    $('iframe').each(function (frame_index, frame_element) {
-      $(frame_element.contentDocument.documentElement).find('.SummaryCard-destination').each(function (index, element) {
-        console.log("Found card.");
-        if (element.innerText !== 'alexandria.io') {
-          return;
-        }
-        console.log("Looks like we're an Alexandria share.");
-
-        var anchor = $(element).closest('a')[0];
-        if ($(anchor).data("alexandria-checked")) return;
-        $(anchor).data("alexandria-checked", true);
-        var tco = anchor.href;
-        console.log(tco);
-
-        var dummydiv = $("<div/>")[0];
-        $(dummydiv).load(tco, function () {
-          var title = $(dummydiv).find('title')[0].innerText;
-
-          if (title.indexOf("https://alexandria.io/browser/") > -1) {
-            // Add play button
-            element.insertAdjacentHTML('beforeend', '<style>\
-    .h72kvmsojg601yi3 {\
-        background-image: url(' + chrome.extension.getURL("assets/images/play.png") + ');\
-        background-repeat: no-repeat;\
-        background-size: auto;\
-        background-position: 0 0;\
-        cursor: pointer;\
-        height: 72px;\
-        left: 50%;\
-        margin: -39px 0 0 -39px;\
-        position: absolute;\
-        top: 50%;\
-        width: 72px;\
-    }\
-    a:hover .h72kvmsojg601yi3 {\
-        background-position: 0 -73px;\
-    }\
-</style>\
-<i class="h72kvmsojg601yi3"></i>');
-
-            // Get identifier and set click listener
-            var identifier = title.substring(30);
-            social_artifact_id = identifier;
-            anchor.addEventListener("click", function (e) {
-              e.preventDefault();
-
-              // Set element which innerHTML is replaced
-              social_stuff_element = anchor.parentNode; // $(anchor).find('.SummaryCard-image')[0];
-
-              // Prepare wallet and start countdown
-              chrome.runtime.sendMessage({action: 'restoreAddress'});
-              socialDisplayCountdown();
-              social_countdown_interval = setInterval(socialDisplayCountdown, 1000);
-
-              // Get USD rate
-              getUSDdayAvg();
-
-              // Get media info
-              $.post("https://api.alexandria.io/alexandria/v2/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function (data) {
-                data = JSON.parse(data).response[0]["media-data"];
-                if (!data) {
-                  console.error("OIP not supported.");
-                  return;
-                }
-                var media = data['alexandria-media'];
-                var info = media.info;
-                var xinfo = info['extra-info'];
-                var payment = media.payment;
-                var ipfsAddr = xinfo['DHT Hash'];
-                var tracks = fixDataMess(xinfo);
-
-                // This sets a global mainFile object to the main object.
-                if (!xinfo['files']) {
-                  xinfo['files'] = [];
-                  var i = 0;
-                  tracks.forEach(function (file) {
-                    xinfo['files'][i] = {
-                      fname: file,
-                      runtime: xinfo['runtime'],
-                      minBuy: 0,
-                      sugBuy: 0,
-                      minPlay: 0,
-                      sugPlay: 0,
-                    }
-                    if (payment) {
-                      xinfo['files'][i]['type'] = payment['type'];
-                      console.log('Artifact uses old payment format');
-                    }
-                    if (xinfo['pwyw']) {
-                      var pwywArray = xinfo['pwyw'].split(',');
-                      xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
-                      xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
-                      xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
-                    } else {
-                      xinfo['files'][i]['sugBuy'] = 0;
-                      xinfo['files'][i]['sugPlay'] = 0;
-                      xinfo['files'][i]['minBuy'] = 0;
-                    }
-                    i++
-                  });
-                }
-                mainFile = {
-                  track: xinfo['files'][0],
-                  name: xinfo['files'][0].dname,
-                  url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
-                  sugPlay: xinfo['files'][0].sugPlay,
-                  minPlay: xinfo['files'][0].minPlay,
-                  sugBuy: xinfo['files'][0].sugBuy,
-                  minBuy: xinfo['files'][0].minBuy
-                };
-                social_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
-                console.info(social_filetype);
-
-                // Setup play button if we can play it
-                if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
-                  if (xinfo['Bitcoin Address']) {
-                    social_bitcoin_address = xinfo['Bitcoin Address'];
-                    setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
-                  } else {
-                    getTradeBotBitcoinAddress(media.publisher, function (data) {
-                      social_bitcoin_address = data;
-                      setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
-                    });
-                  }
-                }
-              });
-            });
-          }
-        });
-      });
-    });
+    //console.log("Checking twitter embeds");
+    $('iframe').each(processTwitterFrame);
   }
 
   $(document).ready(initPaidTwitterEmbeds);
-  //setInterval(initPaidTwitterEmbeds, 1000);
+  setInterval(initPaidTwitterEmbeds, 1000);
 }
 
 var social_day_avg;
@@ -1077,6 +947,154 @@ function onPaymentDone(file) {
     facebookLoadTrack(file.track.dname, trackPath, file.track.fname);
 }
 
+function processTwitterFrame(frame_index, frame_element) {
+  var fe = $(frame_element);
+  var src = fe.attr('src');
+
+  if (!src || src.trim() === ''){
+    return;
+  }
+
+  if (fe.data("alexandria-checked")) return;
+  fe.data("alexandria-checked", true);
+
+  setTimeout(function(){
+    var f = frame_element.contentDocument.documentElement;
+    console.log("Found frame.");
+    console.log(f, src);
+    $(f).find('.SummaryCard-destination').each(processTwitterCard);
+  }, 250)
+}
+
+function processTwitterCard(index, element) {
+  console.log("Found card.");
+  if (element.innerText !== 'alexandria.io') {
+    return;
+  }
+  console.log("Looks like we're an Alexandria share.");
+
+  var anchor = $(element).closest('a')[0];
+  if ($(anchor).data("alexandria-checked")) return;
+  $(anchor).data("alexandria-checked", true);
+  var tco = anchor.href;
+  console.log(tco);
+
+  var dummydiv = $("<div/>")[0];
+  $(dummydiv).load(tco, function () {
+    var title = $(dummydiv).find('title')[0].innerText;
+
+    if (title.indexOf("https://alexandria.io/browser/") > -1) {
+      // Add play button
+      element.insertAdjacentHTML('beforeend', '<style>\
+    .h72kvmsojg601yi3 {\
+        background-image: url(' + chrome.extension.getURL("assets/images/play.png") + ');\
+        background-repeat: no-repeat;\
+        background-size: auto;\
+        background-position: 0 0;\
+        cursor: pointer;\
+        height: 72px;\
+        left: 50%;\
+        margin: -39px 0 0 -39px;\
+        position: absolute;\
+        top: 50%;\
+        width: 72px;\
+    }\
+    a:hover .h72kvmsojg601yi3 {\
+        background-position: 0 -73px;\
+    }\
+</style>\
+<i class="h72kvmsojg601yi3"></i>');
+
+      // Get identifier and set click listener
+      var identifier = title.substring(30);
+      social_artifact_id = identifier;
+      anchor.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // Set element which innerHTML is replaced
+        social_stuff_element = anchor.parentNode; // $(anchor).find('.SummaryCard-image')[0];
+
+        // Prepare wallet and start countdown
+        chrome.runtime.sendMessage({action: 'restoreAddress'});
+        socialDisplayCountdown();
+        social_countdown_interval = setInterval(socialDisplayCountdown, 1000);
+
+        // Get USD rate
+        getUSDdayAvg();
+
+        // Get media info
+        $.post("https://api.alexandria.io/alexandria/v2/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function (data) {
+          data = JSON.parse(data).response[0]["media-data"];
+          if (!data) {
+            console.error("OIP not supported.");
+            return;
+          }
+          var media = data['alexandria-media'];
+          var info = media.info;
+          var xinfo = info['extra-info'];
+          var payment = media.payment;
+          var ipfsAddr = xinfo['DHT Hash'];
+          var tracks = fixDataMess(xinfo);
+
+          // This sets a global mainFile object to the main object.
+          if (!xinfo['files']) {
+            xinfo['files'] = [];
+            var i = 0;
+            tracks.forEach(function (file) {
+              xinfo['files'][i] = {
+                fname: file,
+                runtime: xinfo['runtime'],
+                minBuy: 0,
+                sugBuy: 0,
+                minPlay: 0,
+                sugPlay: 0,
+              }
+              if (payment) {
+                xinfo['files'][i]['type'] = payment['type'];
+                console.log('Artifact uses old payment format');
+              }
+              if (xinfo['pwyw']) {
+                var pwywArray = xinfo['pwyw'].split(',');
+                xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
+                xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
+                xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
+              } else {
+                xinfo['files'][i]['sugBuy'] = 0;
+                xinfo['files'][i]['sugPlay'] = 0;
+                xinfo['files'][i]['minBuy'] = 0;
+              }
+              i++
+            });
+          }
+          mainFile = {
+            track: xinfo['files'][0],
+            name: xinfo['files'][0].dname,
+            url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
+            sugPlay: xinfo['files'][0].sugPlay,
+            minPlay: xinfo['files'][0].minPlay,
+            sugBuy: xinfo['files'][0].sugBuy,
+            minBuy: xinfo['files'][0].minBuy
+          };
+          social_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
+          console.info(social_filetype);
+
+          // Setup play button if we can play it
+          if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
+            if (xinfo['Bitcoin Address']) {
+              social_bitcoin_address = xinfo['Bitcoin Address'];
+              setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
+            } else {
+              getTradeBotBitcoinAddress(media.publisher, function (data) {
+                social_bitcoin_address = data;
+                setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
+              });
+            }
+          }
+        });
+      });
+    }
+  });
+}
 
 function setTwitterPlayInfo(file, xinfo, artifactType) {
   if (file.type == artifactType) {
