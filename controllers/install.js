@@ -226,10 +226,10 @@ $(document).ready(function() {
         localStorage['proTipInstalled'] = true;
         if(localStorage['protip-popup-install']){
            chrome.tabs.create({
-                url: "views/home.html" // obj.href
+                url: "views/options.html" // obj.href
            });
         } else {
-           window.location.href = "home.html";
+           window.location.href = "options.html";
         }
     });
 

@@ -31,7 +31,7 @@
       <div class="container nav-non-responsive">
         <div id="navbar" class="">
           <ul class="nav navbar-nav">
-
+<!--
             <li>
               <a href="home.html">
                 <div class="menu-icon">
@@ -49,7 +49,16 @@
                 <div class="menu-label">Subscriptions</div>
               </a>
             </li>
-
+-->
+            <li class="active">
+              <a href="options.html">
+                <div class="menu-icon">
+                  <span class="glyphicon glyphicon-cog big-icon" aria-hidden="true"></span>
+                </div>
+                <div class="menu-label">Settings</div>
+              </a>
+            </li>
+            
             <li>
               <a href="financial.html">
                 <div class="menu-icon">
@@ -58,7 +67,7 @@
                 <div class="menu-label">Wallet</div>
               </a>
             </li>
-
+<!--
             <li>
               <a id="blacklist" href="blacklist.html">
                 <div class="menu-icon">
@@ -67,16 +76,9 @@
                  <div class="menu-label">Ignore</div>
               </a>
             </li>
+-->
 
-            <li class="active">
-              <a href="options.html">
-                <div class="menu-icon">
-                  <span class="glyphicon glyphicon-cog big-icon" aria-hidden="true"></span>
-                </div>
-                <div class="menu-label">Options</div>
-              </a>
-            </li>
-
+<!--
             <li>
               <a href="recommend.html">
                 <div class="menu-icon" style="margin-top:2px;">
@@ -85,7 +87,7 @@
                 <div class="menu-label">Recommended</div>
               </a>
             </li>
-
+-->
             <!--
 
             <li>
@@ -113,7 +115,7 @@
       <img class="ajax-loader" id="ajax-loader" src="../assets/images/ajax_loader.gif" />
     </div>
 
-
+<!--
     <label class="ios-subheading">
       DEFAULT SUBSCRIPTION AMOUNT
     </label>
@@ -121,14 +123,14 @@
       <span class="fiat-code">USD</span>
       <input type="number" id="default-subscription-amount-fiat" step="0.05" min="0.1" style="width:80px;margin:5px;"></input>
     </div>
-
+-->
     <!-- <label class="ios-subheading">
       RESET TO DEFAULT OPTIONS
     </label>
     <div class="ios-section">
         <a class="btn btn-warning" id="reset-to-default-options">Reset to Default Options</a>
     </div> -->
-
+<!--
     <label class="ios-subheading">
       EXAMPLE METATAG
     </label>
@@ -136,6 +138,42 @@
       <textarea id="example-metatag" style="width:400px;">
 
       </textarea>
+    </div>
+-->
+    <label class="ios-subheading">
+      AutoPay Countdown Timer:
+    </label>
+    <div class="ios-section">
+      <span>wait </span>
+      <input type="number" id="alexandria-autopay-countdown" min="0" style="width:80px;margin:5px;"></input>
+      <span>seconds before sending payment. Please note the cancel button will be displayed during this countdown. </span>
+    </div>
+
+    <label class="ios-subheading">
+      AutoPay Price Thresholds:
+    </label>
+
+    <div class="ios-section">
+      Videos:
+
+      $ <input type="number" id="alexandria-autopay-play-videos" min="0.01" style="width:80px;margin:5px;"></input>
+      to play
+      $ <input type="number" id="alexandria-autopay-buy-videos" min="0.01" style="width:80px;margin:5px;"></input>
+      to buy
+    </div>
+    <div class="ios-section">
+      Music:
+      $ <input type="number" id="alexandria-autopay-play-music" min="0.01" style="width:80px;margin:5px;"></input>
+      to play
+      <input type="number" id="alexandria-autopay-buy-music" min="0.01" style="width:80px;margin:5px;"></input>
+      to buy
+    </div>
+    <div class="ios-section">
+      Movies:
+      $ <input type="number" id="alexandria-autopay-play-movies" min="0.01" style="width:80px;margin:5px;"></input>
+      to play
+      <input type="number" id="alexandria-autopay-buy-movies" min="0.01" style="width:80px;margin:5px;"></input>
+      to buy
     </div>
 
     <label class="ios-subheading">
@@ -146,15 +184,7 @@
       <button id="clear-log" class="btn btn-xs btn-warning">Clear Log</button>
     </div>
 
-    <label class="ios-subheading">
-      Open Index Protocol
-      <br>
-      AutoPay Timer:
-    </label>
-    <div class="ios-section">
-      <input type="number" id="alexandria-autopay-countdown" min="0" style="width:80px;margin:5px;"></input>
-      <span>seconds</span>
-    </div>
+
 
   </body>
 </html>
