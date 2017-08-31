@@ -52,26 +52,26 @@ function updateCurrency(newCurrencyCode, oldFiatCurrencyCode) {
               resolve({exchangeRateCoeff: exchangeRateCoeff, newCurrencyCode: newCurrencyCode});
           } else if (newCurrencyCode == 'BTC') {
               // from fiat to BTC
-              currencyManager.getExchangeRate(oldFiatCurrencyCode).then(function(rateObj) {
-                  exchangeRateCoeff = 1/rateObj['24h_avg'];
+              currencyManager.getExchangeRate(oldFiatCurrencyCode).then(function(rate) {
+                  exchangeRateCoeff = 1/rate;
                   resolve({exchangeRateCoeff: exchangeRateCoeff, newCurrencyCode: newCurrencyCode});
               });
           } else if (newCurrencyCode == 'mBTC'){
-              currencyManager.getExchangeRate(oldFiatCurrencyCode).then(function(rateObj) {
+              currencyManager.getExchangeRate(oldFiatCurrencyCode).then(function(rate) {
                   // from fiat to mBTC
-                  exchangeRateCoeff = 1000/rateObj['24h_avg'];
+                  exchangeRateCoeff = 1000/rate;
                   resolve({exchangeRateCoeff: exchangeRateCoeff, newCurrencyCode: newCurrencyCode});
               });
           } else if (oldFiatCurrencyCode == 'BTC') {
-              currencyManager.getExchangeRate(newCurrencyCode).then(function(rateObj) {
+              currencyManager.getExchangeRate(newCurrencyCode).then(function(rate) {
                   // from BTC to fiat
-                  exchangeRateCoeff = rateObj['24h_avg'];
+                  exchangeRateCoeff = rate;
                   resolve({exchangeRateCoeff: exchangeRateCoeff, newCurrencyCode: newCurrencyCode});
               });
           } else if (oldFiatCurrencyCode == 'mBTC') {
-            currencyManager.getExchangeRate(newCurrencyCode).then(function(rateObj) {
+            currencyManager.getExchangeRate(newCurrencyCode).then(function(rate) {
                 // from mBTC to fiat
-                exchangeRateCoeff = rateObj['24h_avg']/1000;
+                exchangeRateCoeff = rate/1000;
                 resolve({exchangeRateCoeff: exchangeRateCoeff, newCurrencyCode: newCurrencyCode});
             });
           } else { // fiat to fiat

@@ -51,7 +51,7 @@
         "http://blockchain.info/*",
         "https://blockchain.info/*",
         "wss://ws.blockchain.info:*",
-        "https://api.bitcoinaverage.com/ticker/*"
+        "https://api.coinmarketcap.com/v1/ticker/*"
      ],
    "incognito": "not_allowed",
    "manifest_version": 2,

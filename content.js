@@ -571,9 +571,9 @@ if (location.hostname === "alexandria.io") {
 
     function getUSDdayAvg() {
         $.ajax({
-            url: "https://api.bitcoinaverage.com/ticker/global/USD/"
+            url: "https://api.coinmarketcap.com/v1/ticker/bitcoin/"
         }).done(function (usddata) {
-            facebook_day_avg = usddata['24h_avg'];
+            facebook_day_avg = usddata[0]['price_usd'];
         });
     }
 
