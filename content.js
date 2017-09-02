@@ -576,73 +576,26 @@ if (location.hostname === "alexandria.io") {
                     getUSDdayAvg();
 
                     // Get media info
+                    console.log(identifier)
                     $.post("https://api.alexandria.io/alexandria/v2/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function(data) {
-                        data = JSON.parse(data).response[0]["media-data"];
-                        if (!data) {
-                          console.error("OIP not supported.");
-                          return;
-                        }
-                        var media = data['alexandria-media'];
-                        var info = media.info;
-                        var xinfo = info['extra-info'];
-                        var payment = media.payment;
-                        var ipfsAddr = xinfo['DHT Hash'];
-                        var tracks = fixDataMess(xinfo);
+                      data = JSON.parse(data).response[0];
+                      var mainData = getMainData(data)
 
-                        // This sets a global mainFile object to the main object.
-                        if (!xinfo['files']) {
-                            xinfo['files'] = [];
-                            var i = 0;
-                            tracks.forEach( function (file) {
-                                xinfo['files'][i] = {
-                                    fname: file,
-                                    runtime: xinfo['runtime'],
-                                    minBuy: 0,
-                                    sugBuy: 0,
-                                    minPlay: 0,
-                                    sugPlay: 0,
-                                }
-                                if (payment) {
-                                    xinfo['files'][i]['type'] = payment['type'];
-                                    console.log('Artifact uses old payment format');
-                                }
-                                if (xinfo['pwyw']) {
-                                    var pwywArray = xinfo['pwyw'].split(',');
-                                    xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
-                                    xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
-                                    xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
-                                } else {
-                                    xinfo['files'][i]['sugBuy'] = 0;
-                                    xinfo['files'][i]['sugPlay'] =  0;
-                                    xinfo['files'][i]['minBuy'] =  0;
-                                }
-                                i++
-                            });
-                        }
-                        mainFile = {
-                            track: xinfo['files'][0],
-                            name: xinfo['files'][0].dname,
-                            url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
-                            sugPlay: xinfo['files'][0].sugPlay,
-                            minPlay: xinfo['files'][0].minPlay,
-                            sugBuy: xinfo['files'][0].sugBuy,
-                            minBuy: xinfo['files'][0].minBuy
-                        };
-                        social_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
-                        console.info(social_filetype);
+                      social_filetype = mainData.track.fname.split('.')[mainData.track.fname.split('.').length - 1].toLowerCase();
+                      console.info(social_filetype);
 
-                        // Setup play button if we can play it
-                        if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
-                            if (xinfo['Bitcoin Address']) {
-                                social_bitcoin_address = xinfo['Bitcoin Address'];
-                                setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
-                            } else {
-                                getTradeBotBitcoinAddress(media.publisher, function(data) {
-                                    social_bitcoin_address = data;
-                                    setFacebookPlayInfo(xinfo['files'][0], xinfo, media['type']);
-                                });
-                            }
+                      // Setup play button if we can play it
+                      if (!mainData.disallowPlay && mainData.sugPlay) {
+                        if (mainData.btcAddress) {
+                          social_bitcoin_address = mainData.btcAddress;
+                          setFacebookPlayInfo(mainData);
+                        } else {
+                          getTradeBotBitcoinAddress(mainData.publisher, function (data) {
+                            social_bitcoin_address = data;
+                            setFacebookPlayInfo(mainData);
+                          });
                         }
+                      }
                     });
                 });
             }
@@ -675,74 +628,6 @@ var social_artifact_id;
 var social_countdown_interval;
 var social_countdown_box;
 
-function addCountdownBox(price, callback) {
-//     chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
-//         document.body.insertAdjacentHTML('beforeend', '<div id="protip-countdown-box" style="\
-//     border-radius: 15px;\
-//     -webkit-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-//     -moz-box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.5);\
-//     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);\
-//     position: fixed;\
-//     right: 20px;\
-//     top: 20px;\
-//     z-index: 2147483647;\
-//     background-color: rgba(255,255,255,0.8);\
-//     border: 1px solid #333;\
-//     width: 320px;\
-//     font-family: \'Roboto\', sans-serif;\
-//     font-weight: 100;\
-//     "><link href="https://fonts.googleapis.com/css?family=Roboto:100,400i,900" rel="stylesheet"><div style="\
-//     padding: 15px 20px 15px 15px;\
-// "><div style="\
-//     font-size: 45px;\
-//     line-height: 50px;\
-//     float: right;\
-//     text-align: right;\
-// ">sending<br><span id="protip-countdown-usd" style="\
-//     font-weight: 400;\
-//     font-style: italic;\
-// ">$' + price + '</span></div><div id="protip-countdown-seconds" style="\
-//     font-size: 120px;\
-//     line-height: 100px;\
-//     letter-spacing: -15px;\
-// ">' + response.countdown + '</div></div><div id="protip-countdown-cancel" style="\
-//     font-size: 80px;\
-//     font-weight: 900;\
-//     color: rgba(0,0,0,0.5);\
-//     background-color: rgba(0,0,0,0.2);\
-//     text-align: center;\
-//     line-height: 100px;\
-//     border-bottom-left-radius: 15px;\
-//     border-bottom-right-radius: 15px;\
-//     cursor: pointer;\
-// ">Cancel</div></div>');
-//         callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
-//     });
-
-  chrome.runtime.sendMessage({action: "getAlexandriaAutopayCountdown"}, function(response) {
-    document.body.insertAdjacentHTML('beforeend', '\
-      <div id="protip-countdown-box" style="z-index: 2147483647;margin:0; padding:0;line-height: 1;font-family: OpenSans; position: fixed; right: 20px; top: 20px;display:block;opacity:0.85;background-color:#F7F6F5;box-shadow:0 0 32px 0 rgba(0,0,0,0.19);border-radius:11.5px;color:#f7f6f5;width:371px;height:350px;text-align: center">\
-  	  <div style="color: #000; padding-top: 1px"><p style="font-size: 25px; color: gray">sending <strong id="protip-countdown-usd" style="color: black">$' + price + '</strong> to</p></div>\
-     	<div style="color: #000"><p style="font-size: 25px; color: gray; margin-top: -15px;">The Biddy Bums</p></div>\
-        <div class="item" style="padding-right: 30%; padding-left: 30%;position: relative; float: left;">\
-          <h2 id="protip-countdown-seconds" style="text-align:center; position: absolute; margin-top: 20px; line-height: 125px; font-size: 50px; width: 160px; color: #000;">' + response.countdown + '</h2>\
-          <svg width="160" height="160" xmlns="http://www.w3.org/2000/svg" style="-webkit-transform: rotate(-90deg); transform: rotate(-90deg);">\
-            <g>\
-              <title>l1</title>\
-              <circle id="circle" stroke-dasharray="440" stroke-dashoffset="440" r="69.85699" cy="81" cx="81" stroke-width="8" stroke="#6fdb6f" fill="none"/>\
-            </g>\
-          </svg>\
-        </div>\
-        <div style="margin-top: 10px">\
-          <button id="protip-countdown-cancel" style="border: none;outline: none;width: 200px;margin-top: 10px;background: #CA0018; border-radius: 4.6px; margin-left: auto; margin-right: auto;" onmouseover="this.style.background = \'#940213\'; this.style.cursor = \'pointer\';" onmouseleave="this.style.background = \'#CA0018\'; this.style.cursor = \'inherit\';"><span style="font-family: OpenSans;font-size: 18px;color: #FFFFFF;margin-top: 10px;height:40px;line-height: 40px;text-align: center">Cancel Payment</span></button>\
-        </div>\
-      </div>');
-    $('#circle').css('stroke-dashoffset', 0);
-    $('#circle').css('transition', 'all 1s linear');
-    callback(document.getElementById('protip-countdown-box'), document.getElementById('protip-countdown-cancel'));
-  });
-}
-
 function facebookLoadTrack(name, url, fname) {
   console.log(name, url, fname, social_stuff_element);
   var filetype = social_filetype;
@@ -767,7 +652,6 @@ function twitterLoadTrack(name, url, fname) {
   var filetype = social_filetype;
   fname = encodeURI(fname).replace('+', '%20');
   console.info(url + fname);
-  var posterurl = url;
   var src = url + fname;
 
   if (fname == 'none') {
@@ -795,7 +679,8 @@ function twitterLoadTrack(name, url, fname) {
 }
 
 function IPFSUrl (components) {
-  var IPFSHost = 'https://ipfs.alexandria.io';
+  // ToDo: Swap IPFS Gateway for Alexandria Gateway
+  var IPFSHost = 'https://gateway.ipfs.io'; // https://ipfs.alexandria.io';
   return encodeURI (IPFSHost + '/ipfs/' + components.join ('/'));
 }
 
@@ -863,7 +748,7 @@ function socialDisplayCountdown() {
       $('#circle').css('stroke-dashoffset', 440-(seconds-1)*(440/10));
     }
   } else {
-    addCountdownBox("...", function(box, cancel) {
+    addCountdownBox('0', "...", function(box, cancel) {
       social_countdown_box = box;
       cancel.addEventListener("click", function() {
         clearInterval(social_countdown_interval);
@@ -975,9 +860,11 @@ function makePaymentToAddress(address, minAmt, sugAmt) {
   return USDToBTC(sugAmt);
 }
 
-function setFacebookPlayInfo(file, xinfo, artifactType) {
-  if (file.type == artifactType) {
-    social_file_data = {track: file, name: name, url: IPFSUrl([xinfo['DHT Hash'], file.fname]), sugPlay: file.sugPlay, minPlay: file.minPlay, sugBuy: file.sugBuy, minBuy: file.minBuy};
+function setFacebookPlayInfo(mainData) {
+    console.log('setFacebookPlayInfo')
+  console.log(mainData)
+  // if (mainData.track.type === mainData.type) {
+    social_file_data = {track: mainData.track, name: mainData.name, url: mainData.url, sugPlay: mainData.track.sugPlay, minPlay: mainData.track.minPlay, sugBuy: mainData.track.sugBuy, minBuy: mainData.track.minBuy};
     $('#protip-countdown-usd').text("$" + social_file_data.sugPlay);
 
     // Get payment info
@@ -998,7 +885,7 @@ function setFacebookPlayInfo(file, xinfo, artifactType) {
 
       checkForPrice();
     }
-  }
+  // }
 }
 
 function onPaymentDone(file) {
@@ -1091,69 +978,21 @@ function processTwitterCard(index, element) {
 
         // Get media info
         $.post("https://api.alexandria.io/alexandria/v2/search", '{"protocol":"media","search-on":"txid","search-for":"' + identifier + '","search-like": true}', function (data) {
-          data = JSON.parse(data).response[0]["media-data"];
-          if (!data) {
-            console.error("OIP not supported.");
-            return;
-          }
-          var media = data['alexandria-media'];
-          var info = media.info;
-          var xinfo = info['extra-info'];
-          var payment = media.payment;
-          var ipfsAddr = xinfo['DHT Hash'];
-          var tracks = fixDataMess(xinfo);
+          data = JSON.parse(data).response[0];
+          var mainData = getMainData(data)
 
-          // This sets a global mainFile object to the main object.
-          if (!xinfo['files']) {
-            xinfo['files'] = [];
-            var i = 0;
-            tracks.forEach(function (file) {
-              xinfo['files'][i] = {
-                fname: file,
-                runtime: xinfo['runtime'],
-                minBuy: 0,
-                sugBuy: 0,
-                minPlay: 0,
-                sugPlay: 0,
-              }
-              if (payment) {
-                xinfo['files'][i]['type'] = payment['type'];
-                console.log('Artifact uses old payment format');
-              }
-              if (xinfo['pwyw']) {
-                var pwywArray = xinfo['pwyw'].split(',');
-                xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
-                xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
-                xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
-              } else {
-                xinfo['files'][i]['sugBuy'] = 0;
-                xinfo['files'][i]['sugPlay'] = 0;
-                xinfo['files'][i]['minBuy'] = 0;
-              }
-              i++
-            });
-          }
-          mainFile = {
-            track: xinfo['files'][0],
-            name: xinfo['files'][0].dname,
-            url: IPFSUrl([xinfo['DHT Hash'], xinfo['files'][0].fname]),
-            sugPlay: xinfo['files'][0].sugPlay,
-            minPlay: xinfo['files'][0].minPlay,
-            sugBuy: xinfo['files'][0].sugBuy,
-            minBuy: xinfo['files'][0].minBuy
-          };
-          social_filetype = mainFile.track.fname.split('.')[mainFile.track.fname.split('.').length - 1].toLowerCase();
+          social_filetype = mainData.track.fname.split('.')[mainData.track.fname.split('.').length - 1].toLowerCase();
           console.info(social_filetype);
 
           // Setup play button if we can play it
-          if (!xinfo['files'][0].disallowPlay && xinfo['files'][0].sugPlay) {
-            if (xinfo['Bitcoin Address']) {
-              social_bitcoin_address = xinfo['Bitcoin Address'];
-              setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
+          if (!mainData.disallowPlay && mainData.sugPlay) {
+            if (mainData.btcAddress) {
+              social_bitcoin_address = mainData.btcAddress;
+              setTwitterPlayInfo(mainData);
             } else {
-              getTradeBotBitcoinAddress(media.publisher, function (data) {
+              getTradeBotBitcoinAddress(mainData.publisher, function (data) {
                 social_bitcoin_address = data;
-                setTwitterPlayInfo(xinfo['files'][0], xinfo, media['type']);
+                setTwitterPlayInfo(mainData);
               });
             }
           }
@@ -1163,9 +1002,9 @@ function processTwitterCard(index, element) {
   });
 }
 
-function setTwitterPlayInfo(file, xinfo, artifactType) {
-  if (file.type == artifactType) {
-    social_file_data = {track: file, name: name, url: IPFSUrl([xinfo['DHT Hash'], file.fname]), sugPlay: file.sugPlay, minPlay: file.minPlay, sugBuy: file.sugBuy, minBuy: file.minBuy};
+function setTwitterPlayInfo(mainData) {
+  // if (mainData.track.type === mainData.type) {
+    social_file_data = {track: mainData.track, name: mainData.name, url: mainData.url, sugPlay: mainData.track.sugPlay, minPlay: mainData.track.minPlay, sugBuy: mainData.track.sugBuy, minBuy: mainData.track.minBuy};
     $('#protip-countdown-usd').text("$" + social_file_data.sugPlay);
 
     // Get payment info
@@ -1186,5 +1025,110 @@ function setTwitterPlayInfo(file, xinfo, artifactType) {
 
       checkForPrice();
     }
+  // }
+}
+
+
+function getMainData(data) {
+  if (data['media-data'] !== undefined) {
+    var am = data['media-data']['alexandria-media']
+    if (am !== undefined) {
+      return getMainDataAM(data)
+    }
   }
+  if (data['oip-041'] !== undefined) {
+    return getMainDataOIP(data)
+  }
+}
+
+function getMainDataOIP(data) {
+  var art = data['oip-041'].artifact
+  var file0 = art.storage.files[0]
+
+  var btcAddress = ''
+  for (var i = 0; i < art.payment.addresses.length; i++) {
+      var addr = art.payment.addresses[i]
+      if (addr){
+          console.log(addr)
+          if (addr.token.toLowerCase() === 'btc' || addr.token.toLowerCase() === 'bitcoin'){
+              btcAddress = addr.address
+          }
+      }
+  }
+
+  if( art.payment.fiat.toLowerCase() !== 'usd'){
+    throw new Error("Artifact is denominated in " + art.payment.fiat + ". Unsupported currency.");
+  }
+
+  var split = art.payment.scale.split(':')
+  file0.sugPlay = file0.sugPlay*split[1]/split[0]
+  file0.minPlay = file0.minPlay*split[1]/split[0]
+  file0.sugBuy  = file0.sugBuy *split[1]/split[0]
+  file0.minBuy  = file0.minBuy *split[1]/split[0]
+
+  return {
+    track: file0,
+    name: file0.dname,
+    url: IPFSUrl([art.storage.location, file0.fname]),
+    sugPlay: file0.sugPlay,
+    minPlay: file0.minPlay,
+    sugBuy: file0.sugBuy,
+    minBuy: file0.minBuy,
+    disallowPlay: file0.disallowPlay,
+    btcAddress: btcAddress
+  };
+}
+
+
+function getMainDataAM(data) {
+  var media = data["media-data"]['alexandria-media'];
+  var info = media.info;
+  var xinfo = info['extra-info'];
+  var payment = media.payment;
+  var ipfsAddr = xinfo['DHT Hash'];
+  var tracks = fixDataMess(xinfo);
+
+  // This sets a global mainFile object to the main object.
+  if (!xinfo['files']) {
+    xinfo['files'] = [];
+    var i = 0;
+    tracks.forEach(function (file) {
+      xinfo['files'][i] = {
+        fname: file,
+        runtime: xinfo['runtime'],
+        minBuy: 0,
+        sugBuy: 0,
+        minPlay: 0,
+        sugPlay: 0
+      }
+      if (payment) {
+        xinfo['files'][i]['type'] = payment['type'];
+        console.log('Artifact uses old payment format');
+      }
+      if (xinfo['pwyw']) {
+        var pwywArray = xinfo['pwyw'].split(',');
+        xinfo['files'][i]['sugBuy'] = parseFloat(pwywArray[0]);
+        xinfo['files'][i]['sugPlay'] = parseFloat(pwywArray[1]);
+        xinfo['files'][i]['minBuy'] = parseFloat(pwywArray[1]);
+      } else {
+        xinfo['files'][i]['sugBuy'] = 0;
+        xinfo['files'][i]['sugPlay'] = 0;
+        xinfo['files'][i]['minBuy'] = 0;
+      }
+      i++
+    });
+  }
+  return {
+    track: xinfo['files'][0],
+    name: xinfo['files'][0].dname,
+    url: IPFSUrl([ipfsAddr, xinfo['files'][0].fname]),
+    sugPlay: xinfo['files'][0].sugPlay,
+    minPlay: xinfo['files'][0].minPlay,
+    sugBuy: xinfo['files'][0].sugBuy,
+    minBuy: xinfo['files'][0].minBuy,
+    disallowPlay: xinfo['files'][0].disallowPlay,
+    btcAddress: xinfo['Bitcoin Address'],
+    type: media['type'],
+    publisher: media.publisher
+  };
 }
