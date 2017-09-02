@@ -373,14 +373,16 @@ function alexandriaSend(address, amount, callback) {
 }
 
 function alexandriaConfirmSend(address, val, FEE) {
-    var password = "";
-
-    wallet.mulitpleOutputsSend([{
-        txDest: address,
-        txSatoshis: val
-    }], FEE, password).then(function(response) {
-        console.info(response);
-    }, function(error) {
-        console.error(error);
-    });
+  console.log('Would have sent ' + val + 'sat to ' + address + ' with a fee of ' + FEE + 'sat')
+  alert('Would have sent ' + val + 'sat to ' + address + ' with a fee of ' + FEE + 'sat')
+    // var password = "";
+    //
+    // wallet.mulitpleOutputsSend([{
+    //     txDest: address,
+    //     txSatoshis: val
+    // }], FEE, password).then(function(response) {
+    //     console.info(response);
+    // }, function(error) {
+    //     console.error(error);
+    // });
 }
